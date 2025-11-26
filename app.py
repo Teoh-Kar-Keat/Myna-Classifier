@@ -56,12 +56,13 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
 # -------------------------------
 def predict(model, labels, image: Image.Image, top_k=5):
     x = preprocess_image(image)
-    preds = model.predict(x)[0]
+    preds = model.predict(x)[0]  # 取 batch 的第一個結果
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
 
-    items = list(zip(labels, preds.tolist()))
+    # 確保 prob 是 float
+    items = [(lbl, float(p)) for lbl, p in zip(labels, preds.tolist())]
     items.sort(key=lambda t: t[1], reverse=True)
     return items[:top_k]
 
