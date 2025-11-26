@@ -18,24 +18,24 @@ def load_model_and_labels(
     labels_path="models/labels.json"
 ):
     if not os.path.exists(model_path):
-        st.error(f"Model file not found at: {model_path}")
+        st.error(f"模型檔案不存在：{model_path}")
         return None, None
 
     try:
         model = tf.keras.models.load_model(model_path)
     except Exception as e:
-        st.error(f"Error loading model: {e}")
+        st.error(f"載入模型失敗: {e}")
         return None, None
 
     if not os.path.exists(labels_path):
-        st.warning(f"Labels file not found at: {labels_path}, using index labels.")
+        st.warning(f"Labels 檔案不存在，將使用索引標籤。")
         labels = None
     else:
         try:
             with open(labels_path, "r", encoding="utf-8") as f:
                 labels = json.load(f)
         except Exception as e:
-            st.warning(f"Error reading labels: {e}")
+            st.warning(f"讀取 labels 失敗: {e}")
             labels = None
 
     return model, labels
@@ -63,15 +63,16 @@ def predict(model, labels, image: Image.Image, top_k=5):
 
     items = list(zip(labels, preds.tolist()))
     items.sort(key=lambda t: t[1], reverse=True)
-    return items[:top_k]  # 回傳 Top-K 預測
+    return items[:top_k]
 
 # -------------------------------
 # Streamlit App
 # -------------------------------
 def main():
-    st.set_page_config(page_title="八哥辨識 (Myna Classifier)", layout="centered")
+    st.set_page_config(page_title="八哥辨識", layout="centered")
     st.title("八哥辨識 (Myna Classifier)")
-    st.write("上傳八哥的照片，模型會顯示預測結果與機率。")
+    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示機率。")
+    st.markdown("---")
 
     # 載入模型與 labels
     model, labels = load_model_and_labels()
@@ -80,11 +81,12 @@ def main():
         return
 
     # 上傳圖片
-    uploaded = st.file_uploader("上傳圖片", type=["jpg", "jpeg", "png"])
+    uploaded = st.file_uploader("選擇圖片", type=["jpg", "jpeg", "png"])
     if uploaded is not None:
         try:
             image = Image.open(BytesIO(uploaded.read()))
-            st.image(image, caption="Uploaded Image", use_column_width=True)
+            st.image(image, caption="已上傳圖片", use_column_width=True)
+            st.markdown("---")
         except Exception as e:
             st.error(f"讀取圖片錯誤: {e}")
             return
@@ -94,7 +96,7 @@ def main():
             results = predict(model, labels, image)
             st.write("### 預測結果 Top 5")
             for label, prob in results:
-                st.write(f"**{label}**: {prob:.4f}")
+                st.write(f"- **{label}**: {prob:.4f}")
         except Exception as e:
             st.error(f"預測失敗: {e}")
 
