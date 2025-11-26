@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Environments
+.venv/
+venv/
+env/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS artifacts
+.DS_Store
+__MACOSX/
+
+# Models and large artifacts
+models/
+
+# Packer/IDE
+.vscode/
