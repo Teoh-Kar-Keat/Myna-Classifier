@@ -52,17 +52,25 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
     return arr
 
 # -------------------------------
+# 將可能的 list / ndarray 轉 float
+# -------------------------------
+def flatten_prob(p):
+    while isinstance(p, (list, np.ndarray)):
+        p = p[0]
+    return float(p)
+
+# -------------------------------
 # 預測
 # -------------------------------
-def predict(model, labels, image: Image.Image, top_k=5):
+def predict(model, labels, image: Image.Image, top_k=3):
     x = preprocess_image(image)
-    preds = model.predict(x)[0]  # 取 batch 的第一個結果
+    preds = model.predict(x)[0]  # 取 batch 的第一個
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
 
     # 確保 prob 是 float
-    items = [(lbl, float(p)) for lbl, p in zip(labels, preds.tolist())]
+    items = [(lbl, flatten_prob(p)) for lbl, p in zip(labels, preds)]
     items.sort(key=lambda t: t[1], reverse=True)
     return items[:top_k]
 
@@ -94,8 +102,8 @@ def main():
 
         st.write("正在辨識中...")
         try:
-            results = predict(model, labels, image)
-            st.write("### 預測結果 Top 5")
+            results = predict(model, labels, image, top_k=3)
+            st.write("### 預測結果 Top 3")
             for label, prob in results:
                 st.write(f"- **{label}**: {prob:.4f}")
         except Exception as e:
