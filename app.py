@@ -1,5 +1,6 @@
 import json
 from io import BytesIO
+import os
 
 import numpy as np
 import streamlit as st
@@ -10,18 +11,37 @@ from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
 
 @st.cache_resource
-def load_model_and_labels(model_path="model.h5", labels_path="model_labels.json"):
-    try:
-        model = tf.keras.models.load_model(model_path)
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        return None, None
-    try:
-        with open(labels_path, "r", encoding="utf-8") as f:
-            labels = json.load(f)
-    except Exception:
-        labels = None
-    return model, labels
+def load_model_and_labels(
+    model_path="models/myna_model.keras",
+    labels_path="models/labels.json",
+    fallback_model="model.h5",
+    fallback_labels="model_labels.json"
+):
+    # 優先使用 models/ 裡的
+    if os.path.exists(model_path) and os.path.exists(labels_path):
+        try:
+            model = tf.keras.models.load_model(model_path)
+            with open(labels_path, "r", encoding="utf-8") as f:
+                labels = json.load(f)
+            st.write(f"✅ Loaded model from {model_path}")
+            return model, labels
+        except Exception as e:
+            st.warning(f"Failed to load model from {model_path}: {e}")
+
+    # fallback
+    if os.path.exists(fallback_model) and os.path.exists(fallback_labels):
+        try:
+            model = tf.keras.models.load_model(fallback_model)
+            with open(fallback_labels, "r", encoding="utf-8") as f:
+                labels = json.load(f)
+            st.write(f"⚠️ Loaded fallback model from {fallback_model}")
+            return model, labels
+        except Exception as e:
+            st.error(f"Failed to load fallback model: {e}")
+            return None, None
+
+    st.error("❌ No model found!")
+    return None, None
 
 
 def preprocess_image(image: Image.Image):
@@ -36,7 +56,6 @@ def preprocess_image(image: Image.Image):
 def predict(model, labels, image: Image.Image):
     x = preprocess_image(image)
     preds = model.predict(x)[0]
-    # build a sorted list of (label, prob)
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
     items = list(zip(labels, preds.tolist()))
@@ -50,7 +69,7 @@ def main():
 
     model, labels = load_model_and_labels()
     if model is None:
-        st.warning("Model not found. Run `training.py` to create `model.h5` and `model_labels.json`, then refresh.")
+        st.warning("Model not found. Please create `model.h5` and `model_labels.json` or put a model in `models/` folder.")
 
     uploaded = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
     if uploaded is not None and model is not None:
