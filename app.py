@@ -46,7 +46,7 @@ def load_model_and_labels(
 # -------------------------------
 def preprocess_image(image: Image.Image, target_size=(256, 256)):
     image = image.convert("RGB")
-    image = image.resize((target_size[1], target_size[0]))  # PIL resize: (width, height)
+    image = image.resize((target_size[1], target_size[0]))
     arr = np.array(image).astype(np.float32)
 
     if arr.ndim == 2:  # 灰階圖片
@@ -77,16 +77,15 @@ def predict_all(model, labels, image: Image.Image):
     if isinstance(preds, list):
         preds = np.array(preds).reshape(-1)
     elif isinstance(preds, np.ndarray):
-        preds = preds.squeeze()  # 去掉 batch 或多餘維度
-        if preds.ndim == 0:  # 變成 scalar
+        preds = preds.squeeze()
+        if preds.ndim == 0:
             preds = np.array([preds])
-        elif preds.ndim > 1:  # 確保 1D
+        elif preds.ndim > 1:
             preds = preds.reshape(-1)
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
 
-    # 中文 label 對照表
     label_map = {
         "common_myna": "家八哥",
         "crested_myna": "八哥",
@@ -105,45 +104,51 @@ def predict_all(model, labels, image: Image.Image):
 # Streamlit App
 # -------------------------------
 def main():
-    st.set_page_config(page_title="八哥辨識", layout="centered")
-    st.title("八哥辨識 (Myna Classifier)")
-    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示所有機率與柱狀圖。")
+    st.set_page_config(page_title="八哥辨識", layout="wide")
+    st.title("🦜 八哥辨識器 (Myna Classifier)")
+    st.markdown("上傳八哥圖片，模型會預測鳥的種類，並以文字與柱狀圖呈現機率。")
     st.markdown("---")
 
     model, labels = load_model_and_labels()
     if model is None:
-        st.warning("找不到模型，請先運行 training.py 產生模型與 labels.json，然後重新整理此頁面。")
+        st.warning("找不到模型，請先運行 training.py 產生模型與 labels.json。")
         return
 
-    uploaded = st.file_uploader("選擇圖片", type=["jpg", "jpeg", "png"])
-    if uploaded is not None:
-        try:
-            image = Image.open(BytesIO(uploaded.read()))
-            st.image(image, caption="已上傳圖片", use_column_width=True)
-            st.markdown("---")
-        except Exception as e:
-            st.error(f"讀取圖片錯誤: {e}")
-            return
+    # 兩欄布局
+    col1, col2 = st.columns([1, 1])
 
-        st.write("正在辨識中...")
-        try:
-            results = predict_all(model, labels, image)
+    with col1:
+        uploaded = st.file_uploader("選擇圖片", type=["jpg", "jpeg", "png"])
+        if uploaded is not None:
+            try:
+                image = Image.open(BytesIO(uploaded.read()))
+                st.image(image, caption="已上傳圖片", use_column_width=True)
+            except Exception as e:
+                st.error(f"讀取圖片錯誤: {e}")
+                return
 
-            # 顯示文字結果
-            st.write("### 預測結果")
-            for name, prob in results:
-                st.write(f"- **{name}**: {prob:.4f}")
+    with col2:
+        if uploaded is not None:
+            st.write("正在辨識中...")
+            try:
+                results = predict_all(model, labels, image)
+                results.sort(key=lambda x: x[1], reverse=True)  # 排序
 
-            # 顯示柱狀圖
-            st.markdown("---")
-            st.write("### 機率柱狀圖")
-            df = pd.DataFrame({
-                "機率": [prob for _, prob in results]
-            }, index=[name for name, _ in results])
-            st.bar_chart(df)
+                # 顯示文字結果
+                st.subheader("📊 預測結果")
+                for name, prob in results:
+                    st.write(f"- **{name}**: {prob*100:.2f}%")
 
-        except Exception as e:
-            st.error(f"預測失敗: {e}")
+                # 柱狀圖 DataFrame
+                df = pd.DataFrame({
+                    "機率": [prob for _, prob in results]
+                }, index=[name for name, _ in results])
+
+                st.subheader("📈 機率柱狀圖 (高→低)")
+                st.bar_chart(df)
+
+            except Exception as e:
+                st.error(f"預測失敗: {e}")
 
 if __name__ == "__main__":
     main()
