@@ -5,7 +5,13 @@ import json
 import tensorflow as tf
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
-
+import os, streamlit as st
+st.write("CWD:", os.getcwd())
+st.write("models dir exists:", os.path.exists("models"))
+if os.path.exists("models"):
+    st.write("models dir contents:", sorted(os.listdir("models")))
+st.write("myna_model.keras exists:", os.path.exists("models/myna_model.keras"))
+st.write("labels.json exists:", os.path.exists("models/labels.json"))
 @st.cache_resource
 def load_model(path="models/myna_model.keras"):
     import os
