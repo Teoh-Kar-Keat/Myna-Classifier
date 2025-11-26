@@ -12,7 +12,7 @@ import tensorflow as tf
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
 # -------------------------------
-# 模型與標籤
+# 模型與標籤載入
 # -------------------------------
 @st.cache_resource
 def load_model_and_labels(model_path="models/myna_model.keras",
@@ -91,14 +91,31 @@ def predict_all(model, labels, image: Image.Image):
     return items
 
 # -------------------------------
-# UI
+# 超級美化版 UI
 # -------------------------------
 def main():
+    # ----------------- 背景 & 漸層 -----------------
+    page_bg_img = """
+    <style>
+    body {
+        background-image: linear-gradient(to bottom right, #f0f8ff, #e6e6fa);
+    }
+    .stApp {
+        color: #4B0082;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
     st.set_page_config(page_title="八哥辨識器 🦜", layout="wide")
-    st.markdown("<h1 style='text-align:center;color:#4B0082;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;'>上傳八哥圖片，立即預測種類並顯示機率！</p>", unsafe_allow_html=True)
+    
+    # ----------------- 頂部標題 -----------------
+    st.markdown("<h1 style='text-align:center; color:#4B0082; font-size:50px;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:20px;'>上傳八哥圖片，立即預測種類並顯示機率！</p>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # ----------------- 載入模型 -----------------
     model, labels = load_model_and_labels()
     if model is None:
         st.warning("請先建立模型和 labels.json")
@@ -106,18 +123,18 @@ def main():
 
     col1, col2 = st.columns([1, 1])
 
-    # 左側圖片
+    # ----------------- 左側: 圖片上傳 -----------------
     with col1:
-        uploaded = st.file_uploader("📂 上傳圖片", type=["jpg","jpeg","png"])
+        uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg","jpeg","png"])
         if uploaded is not None:
             try:
                 image = Image.open(BytesIO(uploaded.read()))
-                st.image(image, caption="已上傳圖片", use_column_width=True)
+                st.image(image, caption="已上傳圖片", use_column_width=True, output_format="JPEG")
             except Exception as e:
                 st.error(f"圖片讀取錯誤: {e}")
                 return
 
-    # 右側結果
+    # ----------------- 右側: 預測結果 -----------------
     with col2:
         if uploaded is not None:
             st.markdown("### 🔍 預測結果")
@@ -125,10 +142,14 @@ def main():
                 results = predict_all(model, labels, image)
                 results.sort(key=lambda x: x[1], reverse=True)
 
-                # 顯示卡片式機率
+                # 卡片式機率顯示
                 for i, (name, prob) in enumerate(results):
                     color = "#32CD32" if i == 0 else "#87CEFA"  # 第一名綠色，其餘藍色
-                    st.markdown(f"<div style='background-color:{color}; padding:10px; border-radius:10px; margin-bottom:5px;'><b>{name}</b>: {prob*100:.2f}%</div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style='background-color:{color}; padding:12px; border-radius:15px; margin-bottom:8px; box-shadow:2px 2px 5px rgba(0,0,0,0.2);'>
+                        <h3 style='color:white; margin:0; padding:0;'>{name}: {prob*100:.2f}%</h3>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 # Altair 柱狀圖
                 df = pd.DataFrame({
@@ -144,7 +165,7 @@ def main():
                         alt.value("skyblue")
                     ),
                     tooltip=["類別", "機率"]
-                ).properties(height=200)
+                ).properties(height=250)
                 st.altair_chart(chart, use_container_width=True)
 
             except Exception as e:
