@@ -57,6 +57,8 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
 # -------------------------------
 def flatten_prob(p):
     while isinstance(p, (list, np.ndarray)):
+        if isinstance(p, np.ndarray) and p.shape == ():  # scalar
+            break
         p = p[0]
     return float(p)
 
@@ -65,7 +67,14 @@ def flatten_prob(p):
 # -------------------------------
 def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
-    preds = model.predict(x)[0]
+    preds = model.predict(x)  # 不先取 [0]，保留原始輸出
+
+    # 檢查原始輸出結構
+    st.write("模型原始輸出：", preds, type(preds), preds.shape if isinstance(preds, np.ndarray) else "")
+
+    # 如果是多維度 (batch, num_classes, …)，取第一個 batch 並展平
+    if isinstance(preds, list) or (isinstance(preds, np.ndarray) and len(preds.shape) > 1):
+        preds = np.array(preds).reshape(-1)
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
