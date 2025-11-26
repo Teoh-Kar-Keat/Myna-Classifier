@@ -3,6 +3,7 @@ import json
 from io import BytesIO
 
 import numpy as np
+import pandas as pd
 import streamlit as st
 from PIL import Image
 
@@ -60,7 +61,7 @@ def flatten_prob(p):
     return float(p)
 
 # -------------------------------
-# 預測
+# 預測所有類別
 # -------------------------------
 def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
@@ -91,7 +92,7 @@ def predict_all(model, labels, image: Image.Image):
 def main():
     st.set_page_config(page_title="八哥辨識", layout="centered")
     st.title("八哥辨識 (Myna Classifier)")
-    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示所有機率。")
+    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示所有機率與柱狀圖。")
     st.markdown("---")
 
     # 載入模型與 labels
@@ -114,9 +115,20 @@ def main():
         st.write("正在辨識中...")
         try:
             results = predict_all(model, labels, image)
+
+            # 顯示文字結果
             st.write("### 預測結果")
             for name, prob in results:
                 st.write(f"- **{name}**: {prob:.4f}")
+
+            # 顯示柱狀圖
+            st.markdown("---")
+            st.write("### 機率柱狀圖")
+            df = pd.DataFrame({
+                "機率": [prob for _, prob in results]
+            }, index=[name for name, _ in results])
+            st.bar_chart(df)
+
         except Exception as e:
             st.error(f"預測失敗: {e}")
 
