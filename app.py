@@ -45,13 +45,6 @@ def load_model_and_labels(
 # 圖片預處理
 # -------------------------------
 def preprocess_image(image: Image.Image, target_size=(256, 256)):
-    """
-    將 PIL Image 轉成模型可用的輸入：
-    - RGB
-    - Resize 到 target_size (H, W)
-    - shape -> (1, H, W, 3)
-    - 預處理 preprocess_input
-    """
     image = image.convert("RGB")
     image = image.resize((target_size[1], target_size[0]))  # PIL resize: (width, height)
     arr = np.array(image).astype(np.float32)
@@ -61,8 +54,6 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
 
     arr = np.expand_dims(arr, axis=0)
     arr = preprocess_input(arr)
-
-    st.write("預處理後影像 shape:", arr.shape)  # (1, H, W, 3)
     return arr
 
 # -------------------------------
@@ -80,14 +71,17 @@ def flatten_prob(p):
 # -------------------------------
 def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
-    preds = model.predict(x)  # 保留原始輸出
+    preds = model.predict(x)
 
-    # 檢查原始輸出
-    st.write("模型原始輸出：", preds, type(preds), preds.shape if isinstance(preds, np.ndarray) else "")
-
-    # 如果是多維度 (batch, num_classes, …)，取第一個 batch 並展平
-    if isinstance(preds, list) or (isinstance(preds, np.ndarray) and len(preds.shape) > 1):
+    # 展平成 1D (num_classes,)
+    if isinstance(preds, list):
         preds = np.array(preds).reshape(-1)
+    elif isinstance(preds, np.ndarray):
+        preds = preds.squeeze()  # 去掉 batch 或多餘維度
+        if preds.ndim == 0:  # 變成 scalar
+            preds = np.array([preds])
+        elif preds.ndim > 1:  # 確保 1D
+            preds = preds.reshape(-1)
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
@@ -116,13 +110,11 @@ def main():
     st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示所有機率與柱狀圖。")
     st.markdown("---")
 
-    # 載入模型與 labels
     model, labels = load_model_and_labels()
     if model is None:
         st.warning("找不到模型，請先運行 training.py 產生模型與 labels.json，然後重新整理此頁面。")
         return
 
-    # 上傳圖片
     uploaded = st.file_uploader("選擇圖片", type=["jpg", "jpeg", "png"])
     if uploaded is not None:
         try:
