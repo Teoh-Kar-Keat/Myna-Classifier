@@ -6,22 +6,20 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from PIL import Image
+import altair as alt
 
 import tensorflow as tf
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
 # -------------------------------
-# 模型與標籤載入
+# 模型與標籤
 # -------------------------------
 @st.cache_resource
-def load_model_and_labels(
-    model_path="models/myna_model.keras",
-    labels_path="models/labels.json"
-):
+def load_model_and_labels(model_path="models/myna_model.keras",
+                          labels_path="models/labels.json"):
     if not os.path.exists(model_path):
         st.error(f"模型檔案不存在：{model_path}")
         return None, None
-
     try:
         model = tf.keras.models.load_model(model_path)
     except Exception as e:
@@ -29,16 +27,15 @@ def load_model_and_labels(
         return None, None
 
     if not os.path.exists(labels_path):
-        st.warning(f"Labels 檔案不存在，將使用索引標籤。")
+        st.warning("Labels 不存在，將用索引代替")
         labels = None
     else:
         try:
             with open(labels_path, "r", encoding="utf-8") as f:
                 labels = json.load(f)
         except Exception as e:
-            st.warning(f"讀取 labels 失敗: {e}")
+            st.warning(f"Labels 讀取失敗: {e}")
             labels = None
-
     return model, labels
 
 # -------------------------------
@@ -48,32 +45,26 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
     image = image.convert("RGB")
     image = image.resize((target_size[1], target_size[0]))
     arr = np.array(image).astype(np.float32)
-
-    if arr.ndim == 2:  # 灰階圖片
+    if arr.ndim == 2:
         arr = np.stack([arr]*3, axis=-1)
-
     arr = np.expand_dims(arr, axis=0)
     arr = preprocess_input(arr)
     return arr
 
-# -------------------------------
-# 將可能的 list / ndarray 轉 float
-# -------------------------------
 def flatten_prob(p):
     while isinstance(p, (list, np.ndarray)):
-        if isinstance(p, np.ndarray) and p.shape == ():  # scalar
+        if isinstance(p, np.ndarray) and p.shape == ():
             break
         p = p[0]
     return float(p)
 
 # -------------------------------
-# 預測所有類別
+# 預測
 # -------------------------------
 def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
     preds = model.predict(x)
 
-    # 展平成 1D (num_classes,)
     if isinstance(preds, list):
         preds = np.array(preds).reshape(-1)
     elif isinstance(preds, np.ndarray):
@@ -97,55 +88,64 @@ def predict_all(model, labels, image: Image.Image):
         name = label_map.get(lbl, lbl)
         prob = flatten_prob(p)
         items.append((name, prob))
-
     return items
 
 # -------------------------------
-# Streamlit App
+# UI
 # -------------------------------
 def main():
-    st.set_page_config(page_title="八哥辨識", layout="wide")
-    st.title("🦜 八哥辨識器 (Myna Classifier)")
-    st.markdown("上傳八哥圖片，模型會預測鳥的種類，並以文字與柱狀圖呈現機率。")
+    st.set_page_config(page_title="八哥辨識器 🦜", layout="wide")
+    st.markdown("<h1 style='text-align:center;color:#4B0082;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'>上傳八哥圖片，立即預測種類並顯示機率！</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     model, labels = load_model_and_labels()
     if model is None:
-        st.warning("找不到模型，請先運行 training.py 產生模型與 labels.json。")
+        st.warning("請先建立模型和 labels.json")
         return
 
-    # 兩欄布局
     col1, col2 = st.columns([1, 1])
 
+    # 左側圖片
     with col1:
-        uploaded = st.file_uploader("選擇圖片", type=["jpg", "jpeg", "png"])
+        uploaded = st.file_uploader("📂 上傳圖片", type=["jpg","jpeg","png"])
         if uploaded is not None:
             try:
                 image = Image.open(BytesIO(uploaded.read()))
                 st.image(image, caption="已上傳圖片", use_column_width=True)
             except Exception as e:
-                st.error(f"讀取圖片錯誤: {e}")
+                st.error(f"圖片讀取錯誤: {e}")
                 return
 
+    # 右側結果
     with col2:
         if uploaded is not None:
-            st.write("正在辨識中...")
+            st.markdown("### 🔍 預測結果")
             try:
                 results = predict_all(model, labels, image)
-                results.sort(key=lambda x: x[1], reverse=True)  # 排序
+                results.sort(key=lambda x: x[1], reverse=True)
 
-                # 顯示文字結果
-                st.subheader("📊 預測結果")
-                for name, prob in results:
-                    st.write(f"- **{name}**: {prob*100:.2f}%")
+                # 顯示卡片式機率
+                for i, (name, prob) in enumerate(results):
+                    color = "#32CD32" if i == 0 else "#87CEFA"  # 第一名綠色，其餘藍色
+                    st.markdown(f"<div style='background-color:{color}; padding:10px; border-radius:10px; margin-bottom:5px;'><b>{name}</b>: {prob*100:.2f}%</div>", unsafe_allow_html=True)
 
-                # 柱狀圖 DataFrame
+                # Altair 柱狀圖
                 df = pd.DataFrame({
-                    "機率": [prob for _, prob in results]
-                }, index=[name for name, _ in results])
-
-                st.subheader("📈 機率柱狀圖 (高→低)")
-                st.bar_chart(df)
+                    "類別": [name for name, _ in results],
+                    "機率": [prob*100 for _, prob in results]
+                })
+                chart = alt.Chart(df).mark_bar().encode(
+                    x=alt.X("機率", title="機率 (%)"),
+                    y=alt.Y("類別", sort='-x', title="八哥種類"),
+                    color=alt.condition(
+                        alt.datum.機率 == df['機率'].max(),
+                        alt.value("green"),
+                        alt.value("skyblue")
+                    ),
+                    tooltip=["類別", "機率"]
+                ).properties(height=200)
+                st.altair_chart(chart, use_container_width=True)
 
             except Exception as e:
                 st.error(f"預測失敗: {e}")
