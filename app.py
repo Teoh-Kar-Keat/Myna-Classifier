@@ -45,11 +45,24 @@ def load_model_and_labels(
 # 圖片預處理
 # -------------------------------
 def preprocess_image(image: Image.Image, target_size=(256, 256)):
+    """
+    將 PIL Image 轉成模型可用的輸入：
+    - RGB
+    - Resize 到 target_size (H, W)
+    - shape -> (1, H, W, 3)
+    - 預處理 preprocess_input
+    """
     image = image.convert("RGB")
-    image = image.resize(target_size)
+    image = image.resize((target_size[1], target_size[0]))  # PIL resize: (width, height)
     arr = np.array(image).astype(np.float32)
+
+    if arr.ndim == 2:  # 灰階圖片
+        arr = np.stack([arr]*3, axis=-1)
+
     arr = np.expand_dims(arr, axis=0)
     arr = preprocess_input(arr)
+
+    st.write("預處理後影像 shape:", arr.shape)  # (1, H, W, 3)
     return arr
 
 # -------------------------------
@@ -67,9 +80,9 @@ def flatten_prob(p):
 # -------------------------------
 def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
-    preds = model.predict(x)  # 不先取 [0]，保留原始輸出
+    preds = model.predict(x)  # 保留原始輸出
 
-    # 檢查原始輸出結構
+    # 檢查原始輸出
     st.write("模型原始輸出：", preds, type(preds), preds.shape if isinstance(preds, np.ndarray) else "")
 
     # 如果是多維度 (batch, num_classes, …)，取第一個 batch 並展平
@@ -86,10 +99,9 @@ def predict_all(model, labels, image: Image.Image):
         "javan_myna": "白尾八哥"
     }
 
-    # 建立 (中文名稱, 機率) 列表
     items = []
     for lbl, p in zip(labels, preds):
-        name = label_map.get(lbl, lbl)  # 找不到就用原本 label
+        name = label_map.get(lbl, lbl)
         prob = flatten_prob(p)
         items.append((name, prob))
 
