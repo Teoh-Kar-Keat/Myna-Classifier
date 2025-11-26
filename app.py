@@ -7,7 +7,7 @@ from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
 
 @st.cache_resource
-def load_model(path="models/myna_model"):
+def load_model(path="models/myna_model.keras"):
     import os
     from tensorflow.keras.layers import TFSMLayer
 
