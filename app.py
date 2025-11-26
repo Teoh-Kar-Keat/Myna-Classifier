@@ -62,17 +62,28 @@ def flatten_prob(p):
 # -------------------------------
 # 預測
 # -------------------------------
-def predict(model, labels, image: Image.Image, top_k=3):
+def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
-    preds = model.predict(x)[0]  # 取 batch 的第一個
+    preds = model.predict(x)[0]
 
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
 
-    # 確保 prob 是 float
-    items = [(lbl, flatten_prob(p)) for lbl, p in zip(labels, preds)]
-    items.sort(key=lambda t: t[1], reverse=True)
-    return items[:top_k]
+    # 中文 label 對照表
+    label_map = {
+        "common_myna": "家八哥",
+        "crested_myna": "八哥",
+        "javan_myna": "白尾八哥"
+    }
+
+    # 建立 (中文名稱, 機率) 列表
+    items = []
+    for lbl, p in zip(labels, preds):
+        name = label_map.get(lbl, lbl)  # 找不到就用原本 label
+        prob = flatten_prob(p)
+        items.append((name, prob))
+
+    return items
 
 # -------------------------------
 # Streamlit App
@@ -80,7 +91,7 @@ def predict(model, labels, image: Image.Image, top_k=3):
 def main():
     st.set_page_config(page_title="八哥辨識", layout="centered")
     st.title("八哥辨識 (Myna Classifier)")
-    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示機率。")
+    st.write("上傳八哥的照片，模型會預測該鳥的種類並顯示所有機率。")
     st.markdown("---")
 
     # 載入模型與 labels
@@ -102,10 +113,10 @@ def main():
 
         st.write("正在辨識中...")
         try:
-            results = predict(model, labels, image, top_k=3)
-            st.write("### 預測結果 Top 3")
-            for label, prob in results:
-                st.write(f"- **{label}**: {prob:.4f}")
+            results = predict_all(model, labels, image)
+            st.write("### 預測結果")
+            for name, prob in results:
+                st.write(f"- **{name}**: {prob:.4f}")
         except Exception as e:
             st.error(f"預測失敗: {e}")
 
