@@ -88,8 +88,9 @@ def predict_all(model, labels, image: Image.Image):
 # UI 主介面
 # ------------------------------------------------------
 def main():
-    st.markdown("<h1 style='text-align:center; font-size:50px;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:20px;'>上傳八哥圖片，即可獲得分類與機率分析</p>", unsafe_allow_html=True)
+    # 標題與描述
+    st.markdown("<h1 style='text-align:center; font-size:60px;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:22px;'>上傳八哥圖片，即可獲得分類與機率分析</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     model, labels = load_model_and_labels()
@@ -98,19 +99,20 @@ def main():
 
     col1, col2 = st.columns(2, gap="large")
 
-    # ---------------- 左邊 ----------------
+    # ---------------- 左邊圖片 ----------------
     with col1:
         uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg","jpeg","png"])
         if uploaded:
             image = Image.open(BytesIO(uploaded.read()))
-            st.image(image, caption="已上傳圖片", use_column_width=True)
+            # 調整圖片寬度，保持比例
+            st.image(image, caption="已上傳圖片", width=400)
         else:
-            st.markdown("<p style='text-align:center;color:gray;'>尚未上傳圖片</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center;color:gray;font-size:18px;'>尚未上傳圖片</p>", unsafe_allow_html=True)
 
-    # ---------------- 右邊 ----------------
+    # ---------------- 右邊預測結果 ----------------
     with col2:
         if uploaded and image is not None:
-            st.markdown("### 🔍 預測結果")
+            st.markdown("<h3 style='text-align:left;'>🔍 預測結果</h3>", unsafe_allow_html=True)
 
             results = predict_all(model, labels, image)
             results.sort(key=lambda x: x[1], reverse=True)
@@ -118,7 +120,7 @@ def main():
             for i, (name, prob) in enumerate(results):
                 color = "#32CD32" if i == 0 else "#87CEFA"
                 st.markdown(
-                    f"<div style='background-color:{color};padding:8px;border-radius:10px;margin-bottom:5px;color:white;'>"
+                    f"<div style='background-color:{color};padding:10px;border-radius:10px;margin-bottom:6px;color:white;font-size:20px;'>"
                     f"{name}: {prob*100:.2f}%</div>",
                     unsafe_allow_html=True
                 )
@@ -137,11 +139,11 @@ def main():
                     y=alt.Y("類別", sort='-x', title="八哥種類"),
                     tooltip=["類別","機率"]
                 )
-                .properties(height=250)
+                .properties(height=300)
             )
             st.altair_chart(chart, use_container_width=True)
         else:
-            st.markdown("<p style='text-align:center;color:gray;'>尚未產生預測結果</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center;color:gray;font-size:18px;'>尚未產生預測結果</p>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
