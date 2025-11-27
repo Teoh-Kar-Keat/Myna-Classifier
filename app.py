@@ -129,7 +129,7 @@ def main():
         if uploaded is not None:
             try:
                 image = Image.open(BytesIO(uploaded.read()))
-                st.image(image, caption="已上傳圖片", use_container_width=False, width=200, output_format="JPEG")
+                st.image(image, caption="已上傳圖片", use_container_width=False, width=250, output_format="JPEG")
             except Exception as e:
                 st.error(f"圖片讀取錯誤: {e}")
                 return
