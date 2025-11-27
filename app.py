@@ -12,47 +12,9 @@ import tensorflow as tf
 from tensorflow.keras.applications.resnet_v2 import preprocess_input
 
 # ------------------------------------------------------
-# 頁面設定 + CSS（完全左右對稱）
+# 頁面設定
 # ------------------------------------------------------
 st.set_page_config(page_title="八哥辨識器 🦜", layout="wide")
-
-page_css = """
-<style>
-body {
-    background-image: linear-gradient(to bottom right, #f0f8ff, #e6e6fa);
-}
-.stApp {
-    color: #4B0082;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-/* 卡片樣式 */
-.card-box {
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 2px 2px 15px rgba(0,0,0,0.15);
-    min-height: 520px;     /* 左右同高度 */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-}
-
-/* 卡片內圖片置中 */
-.card-box img {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* 卡片內 Altair 圖表自動寬度 */
-.card-box .stAltairChart {
-    width: 100% !important;
-}
-</style>
-"""
-st.markdown(page_css, unsafe_allow_html=True)
 
 # ------------------------------------------------------
 # 模型與標籤載入
@@ -136,68 +98,50 @@ def main():
 
     col1, col2 = st.columns(2, gap="large")
 
-    # ---------------- 左邊卡片 ----------------
+    # ---------------- 左邊 ----------------
     with col1:
-        with st.container():
-            st.markdown("<div class='card-box'>", unsafe_allow_html=True)
+        uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg","jpeg","png"])
+        if uploaded:
+            image = Image.open(BytesIO(uploaded.read()))
+            st.image(image, caption="已上傳圖片", use_column_width=True)
+        else:
+            st.markdown("<p style='text-align:center;color:gray;'>尚未上傳圖片</p>", unsafe_allow_html=True)
 
-            uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg","jpeg","png"])
-            if uploaded:
-                image = Image.open(BytesIO(uploaded.read()))
-                st.image(image, caption="已上傳圖片", width=320)
-            else:
-                st.markdown("<p style='text-align:center;color:gray;'>尚未上傳圖片</p>", unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---------------- 右邊卡片 ----------------
+    # ---------------- 右邊 ----------------
     with col2:
-        with st.container():
-            st.markdown("<div class='card-box'>", unsafe_allow_html=True)
+        if uploaded and image is not None:
+            st.markdown("### 🔍 預測結果")
 
-            if uploaded and image is not None:
-                st.markdown("### 🔍 預測結果")
+            results = predict_all(model, labels, image)
+            results.sort(key=lambda x: x[1], reverse=True)
 
-                results = predict_all(model, labels, image)
-                results.sort(key=lambda x: x[1], reverse=True)
-
-                for i, (name, prob) in enumerate(results):
-                    color = "#32CD32" if i == 0 else "#87CEFA"
-                    st.markdown(
-                        f"""
-                        <div style='background-color:{color};
-                                    padding:12px;
-                                    border-radius:15px;
-                                    margin-bottom:8px;
-                                    box-shadow:2px 2px 5px rgba(0,0,0,0.2);'>
-                            <h4 style='color:white; margin:0;'>{name}: {prob*100:.2f}%</h4>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                # Altair chart
-                df = pd.DataFrame({
-                    "類別": [name for name,_ in results],
-                    "機率": [prob*100 for _,prob in results]
-                })
-
-                chart = (
-                    alt.Chart(df)
-                    .mark_bar()
-                    .encode(
-                        x=alt.X("機率", title="機率 (%)"),
-                        y=alt.Y("類別", sort='-x', title="八哥種類"),
-                        tooltip=["類別","機率"]
-                    )
-                    .properties(height=250)
+            for i, (name, prob) in enumerate(results):
+                color = "#32CD32" if i == 0 else "#87CEFA"
+                st.markdown(
+                    f"<div style='background-color:{color};padding:8px;border-radius:10px;margin-bottom:5px;color:white;'>"
+                    f"{name}: {prob*100:.2f}%</div>",
+                    unsafe_allow_html=True
                 )
-                st.altair_chart(chart, use_container_width=True)
-            else:
-                st.markdown("<p style='text-align:center;color:gray;'>尚未產生預測結果</p>", unsafe_allow_html=True)
 
-            st.markdown("</div>", unsafe_allow_html=True)
+            # Altair 圖表
+            df = pd.DataFrame({
+                "類別": [name for name,_ in results],
+                "機率": [prob*100 for _,prob in results]
+            })
 
+            chart = (
+                alt.Chart(df)
+                .mark_bar()
+                .encode(
+                    x=alt.X("機率", title="機率 (%)"),
+                    y=alt.Y("類別", sort='-x', title="八哥種類"),
+                    tooltip=["類別","機率"]
+                )
+                .properties(height=250)
+            )
+            st.altair_chart(chart, use_container_width=True)
+        else:
+            st.markdown("<p style='text-align:center;color:gray;'>尚未產生預測結果</p>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
