@@ -134,67 +134,65 @@ def main():
     # 左邊
     with col1:
         st.markdown("<div class='card-box'>", unsafe_allow_html=True)
-
-        uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg", "jpeg", "png"])
-        image = None
-
-        if uploaded:
-            image = Image.open(BytesIO(uploaded.read()))
-            st.image(image, caption="已上傳圖片", width=320)
-
+    
+        with st.container():   # 這一段會讓內容被包在卡片內
+            uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg", "jpeg", "png"])
+            image = None
+    
+            if uploaded:
+                image = Image.open(BytesIO(uploaded.read()))
+                st.image(image, caption="已上傳圖片", width=320)
+    
         st.markdown("</div>", unsafe_allow_html=True)
+
 
     # 右邊
     with col2:
         st.markdown("<div class='card-box'>", unsafe_allow_html=True)
-
-        if uploaded and image is not None:
-
-            st.markdown("### 🔍 預測結果")
-
-            results = predict_all(model, labels, image)
-            results.sort(key=lambda x: x[1], reverse=True)
-
-            # 機率卡片
-            for i, (name, prob) in enumerate(results):
-                color = "#32CD32" if i == 0 else "#87CEFA"
-                st.markdown(
-                    f"""
-                    <div style='background-color:{color}; 
-                                padding:12px;
-                                border-radius:15px;
-                                margin-bottom:8px;
-                                box-shadow:2px 2px 5px rgba(0,0,0,0.2);'>
-                        <h4 style='color:white; margin:0;'>{name}: {prob*100:.2f}%</h4>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
+    
+        with st.container():   # 內容進卡片！
+            if uploaded and image is not None:
+    
+                st.markdown("### 🔍 預測結果")
+    
+                results = predict_all(model, labels, image)
+                results.sort(key=lambda x: x[1], reverse=True)
+    
+                for i, (name, prob) in enumerate(results):
+                    color = "#32CD32" if i == 0 else "#87CEFA"
+                    st.markdown(
+                        f"""
+                        <div style='background-color:{color};
+                                    padding:12px;
+                                    border-radius:15px;
+                                    margin-bottom:8px;
+                                    box-shadow:2px 2px 5px rgba(0,0,0,0.2);'>
+                            <h4 style='color:white; margin:0;'>{name}: {prob*100:.2f}%</h4>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+    
+                # Altair chart
+                df = pd.DataFrame({
+                    "類別": [name for name, _ in results],
+                    "機率": [prob*100 for _, prob in results]
+                })
+    
+                chart = (
+                    alt.Chart(df)
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("機率", title="機率 (%)"),
+                        y=alt.Y("類別", sort='-x', title="八哥種類"),
+                        tooltip=["類別", "機率"]
+                    )
+                    .properties(height=250)
                 )
-
-            # Altair 柱狀圖
-            df = pd.DataFrame({
-                "類別": [name for name, _ in results],
-                "機率": [prob*100 for _, prob in results]
-            })
-
-            chart = (
-                alt.Chart(df)
-                .mark_bar()
-                .encode(
-                    x=alt.X("機率", title="機率 (%)"),
-                    y=alt.Y("類別", sort='-x', title="八哥種類"),
-                    color=alt.condition(
-                        alt.datum.機率 == df["機率"].max(),
-                        alt.value("green"),
-                        alt.value("skyblue")
-                    ),
-                    tooltip=["類別", "機率"]
-                )
-                .properties(height=250)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
+                st.altair_chart(chart, use_container_width=True)
+    
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 if __name__ == "__main__":
