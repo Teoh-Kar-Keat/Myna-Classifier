@@ -31,8 +31,8 @@ body {
     padding: 20px;
     border-radius: 20px;
     box-shadow: 2px 2px 15px rgba(0,0,0,0.15);
-    height: 500px;
-    overflow-y: auto;
+    height: 500px; /* 左右等高 → 完美對稱 */
+    overflow-y: auto; /* 避免結果太多溢出 */
 }
 .left-card img {
     display: block;
@@ -58,6 +58,7 @@ def load_model_and_labels(model_path="models/myna_model.keras",
         st.error(f"載入模型失敗: {e}")
         return None, None
 
+    # labels
     if not os.path.exists(labels_path):
         st.warning("⚠️ Labels 不存在，將使用索引代替")
         labels = None
@@ -78,11 +79,20 @@ def preprocess_image(image: Image.Image, target_size=(256, 256)):
     image = image.convert("RGB")
     image = image.resize((target_size[1], target_size[0]))
     arr = np.array(image).astype(np.float32)
+
     if arr.ndim == 2:
         arr = np.stack([arr]*3, axis=-1)
+
     arr = np.expand_dims(arr, axis=0)
     arr = preprocess_input(arr)
     return arr
+
+def flatten_prob(p):
+    while isinstance(p, (list, np.ndarray)):
+        if isinstance(p, np.ndarray) and p.shape == ():
+            break
+        p = p[0]
+    return float(p)
 
 # ------------------------------------------------------
 # 預測
@@ -91,7 +101,7 @@ def predict_all(model, labels, image: Image.Image):
     x = preprocess_image(image)
     preds = model.predict(x)
 
-    # 攤平成一維
+    # 模型輸出攤平
     if isinstance(preds, list):
         preds = np.array(preds).reshape(-1)
     elif isinstance(preds, np.ndarray):
@@ -104,7 +114,7 @@ def predict_all(model, labels, image: Image.Image):
     if labels is None:
         labels = [str(i) for i in range(len(preds))]
 
-    # 中英對照
+    # 中英對照（你的 mapping）
     label_map = {
         "common_myna": "家八哥",
         "crested_myna": "八哥",
@@ -122,6 +132,7 @@ def predict_all(model, labels, image: Image.Image):
 # UI 主介面
 # ------------------------------------------------------
 def main():
+
     # 標題
     st.markdown("<h1 style='text-align:center; font-size:50px;'>🦜 八哥辨識器</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:20px;'>上傳八哥圖片，即可獲得分類與機率分析</p>", unsafe_allow_html=True)
@@ -138,11 +149,14 @@ def main():
     # -------------------
     with col1:
         st.markdown("<div class='left-card'>", unsafe_allow_html=True)
+
         uploaded = st.file_uploader("📂 上傳八哥圖片", type=["jpg", "jpeg", "png"])
         image = None
+
         if uploaded:
             image = Image.open(BytesIO(uploaded.read()))
-            st.image(image, caption="已上傳圖片", width=300)
+            st.image(image, caption="已上傳圖片", width=300)  # 固定寬度 → 對稱
+
         st.markdown("</div>", unsafe_allow_html=True)
 
     # -------------------
@@ -150,13 +164,15 @@ def main():
     # -------------------
     with col2:
         st.markdown("<div class='right-card'>", unsafe_allow_html=True)
+
         if uploaded and image is not None:
+
             st.markdown("### 🔍 預測結果")
 
             results = predict_all(model, labels, image)
             results.sort(key=lambda x: x[1], reverse=True)
 
-            # 卡片式機率顯示
+            # 機率卡片
             for i, (name, prob) in enumerate(results):
                 color = "#32CD32" if i == 0 else "#87CEFA"
                 st.markdown(f"""
@@ -171,8 +187,9 @@ def main():
             # Altair 柱狀圖
             df = pd.DataFrame({
                 "類別": [name for name, _ in results],
-                "機率": [prob*100 for _, prob in results]
+                "機率": [prob * 100 for _, prob in results]
             })
+
             chart = (
                 alt.Chart(df)
                 .mark_bar()
@@ -191,6 +208,7 @@ def main():
             st.altair_chart(chart, use_container_width=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ------------------------------------------------------
 if __name__ == "__main__":
