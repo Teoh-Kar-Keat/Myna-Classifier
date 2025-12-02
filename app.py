@@ -87,7 +87,7 @@ st.markdown("""
 
     /* 4. 分頁 (Tabs) 字體放大 */
     .stTabs [data-baseweb="tab"] {
-        font-size: 1.3rem !important;
+        font-size: 2rem !important;
         font-family: "Times New Roman", "KaiTi", serif !important;
         font-weight: bold;
     }
