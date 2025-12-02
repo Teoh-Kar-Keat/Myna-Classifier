@@ -8,7 +8,7 @@
 https://github.com/yenlung/Deep-Learning-Basics/blob/master/colab02c%20%E7%94%A8%E9%81%B7%E7%A7%BB%E5%AD%B8%E7%BF%92%E6%89%93%E9%80%A0%E5%85%AB%E5%93%A5%E8%BE%A8%E8%AD%98AI.ipynb
 
 
-agent 開發過程：  
+Agent 開發過程：  
 https://github.com/Teoh-Kar-Keat/Myna-Classifier/blob/main/Myna%20bird%20Streamlit%20app.pdf
 
 
