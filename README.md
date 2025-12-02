@@ -5,7 +5,8 @@
 後續進行介面優化，將 Gradio 改為 Streamlit 應用，增加標題、圖文分欄與機率可視化，提升使用者互動體驗；同時為每個偵測物種新增生態介紹，使辨識結果兼具教育與科普價值。整體而言，本筆記本結合遷移學習實作與介面優化，呈現一個清楚易懂且生態化的八哥辨識應用示範。
 
 原github鏈接： https://github.com/Teoh-Kar-Keat/Myna-Classifier/blob/main/colab.ipynb
-agent 開發過程 ： 
+、、、
+agent 開發過程 ： https://github.com/Teoh-Kar-Keat/Myna-Classifier/blob/main/Myna%20bird%20Streamlit%20app.pdf
 
 
 https://github.com/user-attachments/assets/9607bc61-b640-42f7-b7a6-38a08de7ead3
