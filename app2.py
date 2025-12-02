@@ -84,6 +84,69 @@ def predict_all(model, labels, image: Image.Image):
 
     return [(label_map.get(lbl, lbl), float(prob)) for lbl, prob in zip(labels, preds)]
 
+bird_info = {
+    "八哥": {
+        "學名": "Acridotheres cristatellus formosanus",
+        "中文名": "八哥（臺灣亞種）",
+        "物種屬性": "臺灣特有",
+        "保育屬性": "野生動物保育法公告之珍貴稀有野生動物",
+        "分類資訊": "Subspecies 亞種",
+        "綜合描述": (
+            "雌雄同色，全身黑色，額羽豎立如冠羽。翅上具明顯白色翼斑，尾羽末端白色。"
+            "虹膜橙黃，喙象牙白色，跗蹠暗黃。幼鳥背部與翅較褐色，胸腹較淡。"
+        ),
+        "分布": "台灣主要分布於平原地區；原生分布於中國南方至中南半島北部。",
+        "棲地": "生活於海拔 2,100m 以下之竹林、稀疏林地、農地、都市開放空間。",
+        "取食策略": "雜食性，地面覓食昆蟲、種子、水果，常在牛背啄食體外寄生蟲。",
+        "繁衍": "一年 1–2 次繁殖，巢位於樹洞、建築物縫隙等。",
+        "保育狀態": "臺灣紅皮書近危（NT）",
+        "威脅": "棲地破壞、人為干擾、外來種競爭。",
+        "法規": "受《野生動物保育法》保護。",
+        "備註": "台灣特有亞種，常與外來家八哥混淆。"
+    },
+
+    "家八哥": {
+        "學名": "Acridotheres tristis",
+        "中文名": "家八哥",
+        "物種屬性": "外來種（台灣）",
+        "保育屬性": "全球未受威脅，但在部分地區被視為入侵種",
+        "分類資訊": "Species 種",
+        "綜合描述": (
+            "全身深褐黑色，頭部至上胸較黑。眼周裸皮明顯呈黃色。翼上具白色斑塊，飛行時可見。"
+            "喙與腳呈亮黃色。叫聲多變、響亮，適應力極強。"
+        ),
+        "分布": "原生印度、孟加拉、斯里蘭卡；已擴散至全球熱帶與亞熱帶地區，包括台灣都市區。",
+        "棲地": "都市、公園、農田、住家建築附近皆可見，是強勢適應者。",
+        "取食策略": "雜食性，攝食昆蟲、穀物、水果、人類廚餘。",
+        "繁衍": "一年 1–3 次繁殖，巢多築於建築物縫隙或樹洞。",
+        "保育狀態": "全球無危（LC）",
+        "威脅": "在部分地區因數量過多而被控制。",
+        "法規": "部分國家列為入侵物種。",
+        "備註": "台灣常見的外來八哥，與八哥（台灣亞種）易混淆。"
+    },
+
+    "白尾八哥": {
+        "學名": "Acridotheres javanicus",
+        "中文名": "白尾八哥",
+        "物種屬性": "外來種（台灣、小量族群）",
+        "保育屬性": "全球易危（VU）",
+        "分類資訊": "Species 種",
+        "綜合描述": (
+            "體型較小，全身黑色但尾羽末端具明顯白斑。眼周裸皮較不明顯，喙與腳為黃色。"
+            "叫聲細短，行為敏捷。"
+        ),
+        "分布": "原生於印尼爪哇、峇里島等地。因籠鳥貿易擴散至東南亞及部分外來地區。",
+        "棲地": "都市邊緣、農地、小型林地。",
+        "取食策略": "雜食性，包含昆蟲、水果、穀類。",
+        "繁衍": "巢多築於樹洞或建築物縫隙，一次 3–5 枚卵。",
+        "保育狀態": "全球易危（VU），因非法捕捉與棲地破壞導致族群下降。",
+        "威脅": "主要來自籠鳥市場捕捉以及棲地流失。",
+        "法規": "部分國家列為保育鳥類。",
+        "備註": "在台灣目前族群小，可能來自逸養。"
+    }
+}
+
+
 # ------------------------------------------------------
 # UI 主介面
 # ------------------------------------------------------
@@ -111,39 +174,72 @@ def main():
 
     # ---------------- 右邊預測結果 ----------------
     with col2:
+        st.markdown("<div class='right-card'>", unsafe_allow_html=True)
         if uploaded and image is not None:
-            st.markdown("<h3 style='text-align:left;'>🔍 預測結果</h3>", unsafe_allow_html=True)
-
+            st.markdown("### 🔍 預測結果")
+    
             results = predict_all(model, labels, image)
             results.sort(key=lambda x: x[1], reverse=True)
-
+    
+            # 卡片式機率顯示
             for i, (name, prob) in enumerate(results):
                 color = "#32CD32" if i == 0 else "#87CEFA"
-                st.markdown(
-                    f"<div style='background-color:{color};padding:10px;border-radius:10px;margin-bottom:6px;color:white;font-size:20px;'>"
-                    f"{name}: {prob*100:.2f}%</div>",
-                    unsafe_allow_html=True
-                )
-
-            # Altair 圖表
+                st.markdown(f"""
+                <div style='background-color:{color};
+                            padding:12px; border-radius:15px;
+                            margin-bottom:8px;
+                            box-shadow:2px 2px 5px rgba(0,0,0,0.2);'>
+                    <h3 style='color:white; margin:0;'>{name}: {prob*100:.2f}%</h3>
+                </div>
+                """, unsafe_allow_html=True)
+    
+            # Altair 柱狀圖
             df = pd.DataFrame({
-                "類別": [name for name,_ in results],
-                "機率": [prob*100 for _,prob in results]
+                "類別": [name for name, _ in results],
+                "機率": [prob*100 for _, prob in results]
             })
-
             chart = (
                 alt.Chart(df)
                 .mark_bar()
                 .encode(
                     x=alt.X("機率", title="機率 (%)"),
                     y=alt.Y("類別", sort='-x', title="八哥種類"),
-                    tooltip=["類別","機率"]
+                    color=alt.condition(
+                        alt.datum.機率 == df["機率"].max(),
+                        alt.value("green"),
+                        alt.value("skyblue")
+                    ),
+                    tooltip=["類別", "機率"]
                 )
-                .properties(height=300)
+                .properties(height=250)
             )
             st.altair_chart(chart, use_container_width=True)
-        else:
-            st.markdown("<p style='text-align:center;color:gray;font-size:18px;'>尚未產生預測結果</p>", unsafe_allow_html=True)
+    
+            # 類別資訊區塊
+            st.markdown("### 🔹 類別資訊")
+            # 假設 pred_label 是模型最終預測類別
+            pred_label = results[0][0]
+            info = bird_info.get(pred_label, None)  # bird_info 是事先準備的字典
+            if info:
+                st.write(f"**學名:** {info.get('學名', '未知')}")
+                st.write(f"**中文名:** {info.get('中文名', '未知')}")
+                st.write(f"**物種屬性:** {info.get('物種屬性', '未知')}")
+                st.write(f"**保育屬性:** {info.get('保育屬性', '未知')}")
+                st.write(f"**分類資訊:** {info.get('分類資訊', '未知')}")
+                st.write(f"**綜合描述:** {info.get('綜合描述', '無')}")
+                st.write(f"**分布:** {info.get('分布', '無')}")
+                st.write(f"**棲地:** {info.get('棲地', '無')}")
+                st.write(f"**取食策略:** {info.get('取食策略', '無')}")
+                st.write(f"**繁衍:** {info.get('繁衍', '無')}")
+                st.write(f"**保育狀態:** {info.get('保育狀態', '無')}")
+                st.write(f"**威脅:** {info.get('威脅', '無')}")
+                st.write(f"**法規:** {info.get('法規', '無')}")
+                st.write(f"**備註:** {info.get('備註', '無')}")
+            else:
+                st.write("尚無資料")
+    
+        st.markdown("</div>", unsafe_allow_html=True)
+    
 
 if __name__ == "__main__":
     main()
