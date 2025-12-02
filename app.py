@@ -329,7 +329,7 @@ def main():
         
         # Altair 字體調整
         base = alt.Chart(df).encode(
-            y=alt.Y('物種', sort='-x', title=None, axis=alt.Axis(labelFont="KaiTi", labelFontSize=14))
+            y=alt.Y('物種', sort='-x', title=None, axis=alt.Axis(labelFontSize=24))
         )
         bar = base.mark_bar(color="#8FBC8F").encode(x=alt.X('機率(%)', title=None))
         text = base.mark_text(align='left', dx=5, font="Times New Roman", fontSize=14).encode(x='機率(%)', text='機率(%)')
