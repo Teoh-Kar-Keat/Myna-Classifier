@@ -273,7 +273,7 @@ def main():
         st.markdown("---")
         st.markdown("### 辨識支援")
         st.markdown("""
-        <div style="font-family:'KaiTi'; font-size: 1.1rem;">
+        <div style=font-size: 1.1rem;">
         - 八哥 (原生種)<br>
         - 家八哥 (外來種)<br>
         - 白尾八哥 (外來種)
