@@ -42,7 +42,7 @@ st.markdown("""
     
     /* 2. 標題樣式放大 */
     h1 {
-        font-size: 3.5rem !important; /* 特大標題 */
+        font-size: 3.5rem !important;
         font-weight: bold !important;
         color: #2F4F4F !important; /* 深森林綠 */
         margin-bottom: 0.5em !important;
@@ -51,51 +51,57 @@ st.markdown("""
         font-size: 2.2rem !important;
         font-weight: bold !important;
         color: #2F4F4F !important;
-        border-bottom: 2px solid #8FBC8F; /* 標題下裝飾線 */
+        border-bottom: 2px solid #8FBC8F;
         padding-bottom: 10px;
     }
     h3 {
         font-size: 1.6rem !important;
         font-weight: bold !important;
-        color: #556B2F !important; /* 橄欖綠 */
-    }
-    .stTabs [data-baseweb="tab"] button {
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    padding: 8px 16px !important;
+        color: #556B2F !important;
     }
 
     /* 3. 內文大字體優化 (.big-font 類別) */
     .big-font {
-        font-size: 1.35rem !important; /* 字體加大 */
-        line-height: 1.8 !important;    /* 行距加寬，提升閱讀舒適度 */
-        color: #222222;                 /* 深灰黑色，比純黑柔和 */
+        font-size: 1.35rem !important;
+        line-height: 1.8 !important;
+        color: #222222;
         font-weight: 500;
-        text-align: justify;            /* 左右對齊 */
+        text-align: justify;
     }
     
-    /* 列表優化 */
-    .big-font ul, .big-font ol {
-        padding-left: 1.5em;
-    }
-    .big-font li {
-        margin-bottom: 12px; /* 列表項目間距 */
-    }
-    .big-font b {
-        color: #006400; /* 粗體字改為深綠色強調 */
+    .big-font ul, .big-font ol { padding-left: 1.5em; }
+    .big-font li { margin-bottom: 12px; }
+    .big-font b { color: #006400; }
+
+    /* ============================================================
+       4. 分頁 (Tabs) 字體與樣式調整區 (這裡修改 Tab 大小)
+       ============================================================ */
+    .stTabs [data-baseweb="tab"] {
+        font-size: 1.6rem !important; /* 字體大小：可以改 1.5rem, 1.8rem 或 24px */
+        font-family: "Times New Roman", "KaiTi", serif !important;
+        font-weight: bold !important;
+        color: #556B2F !important; /* 預設文字顏色：橄欖綠 */
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
     }
 
-    /* 4. 分頁 (Tabs) 字體放大 */
-    .stTabs [data-baseweb="tab"] {
-        font-size: 2rem !important;
-        font-family: "Times New Roman", "KaiTi", serif !important;
-        font-weight: bold;
+    /* 滑鼠懸停時的效果 */
+    .stTabs [data-baseweb="tab"]:hover {
+        color: #2F4F4F !important; /* 深綠色 */
+        background-color: rgba(143, 188, 143, 0.2); /* 淺綠背景 */
     }
+
+    /* 被選中的 Tab 樣式 */
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: #006400 !important; /* 深綠色 */
+        border-bottom-color: #006400 !important;
+    }
+    /* ============================================================ */
 
     /* 側邊欄背景 */
     section[data-testid="stSidebar"] { background-color: #E8F3E8; }
 
-    /* 圖片容器：相框效果 */
+    /* 圖片容器 */
     .bird-image-container img {
         max-height: 450px !important;
         object-fit: contain;
@@ -107,7 +113,7 @@ st.markdown("""
     /* 資訊卡片容器 */
     .info-box {
         background-color: #FFFFFF;
-        padding: 30px; /* 內距加大 */
+        padding: 30px;
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 25px;
@@ -117,19 +123,19 @@ st.markdown("""
     /* 標籤 (Badges) */
     .badge {
         display: inline-block; padding: 6px 16px; margin: 5px;
-        font-size: 1.1rem; /* 標籤字體加大 */
+        font-size: 1.1rem;
         font-weight: bold; border-radius: 20px; color: white;
         letter-spacing: 1px;
         box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     }
     .badge-native { background-color: #556B2F; }
-    .badge-invasive { background-color: #A52A2A; } /* 磚紅色 */
+    .badge-invasive { background-color: #A52A2A; }
     .badge-neutral { background-color: #DAA520; }
 </style>
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------
-# 詳細資料庫 (對應新 CSS 類別)
+# 詳細資料庫
 # ------------------------------------------------------
 bird_info = {
     "家八哥": {
@@ -332,12 +338,12 @@ def main():
         df = pd.DataFrame(results, columns=["物種", "機率"])
         df["機率(%)"] = (df["機率"] * 100).round(1)
         
-        # Altair 字體調整
+        # Altair 字體調整 (X, Y軸)
         base = alt.Chart(df).encode(
-            y=alt.Y('物種', sort='-x', title=None, axis=alt.Axis(labelFontSize=18))
+            y=alt.Y('物種', sort='-x', title=None, axis=alt.Axis(labelFontSize=18, labelFont="KaiTi"))
         )
         bar = base.mark_bar(color="#8FBC8F").encode(x=alt.X('機率(%)', title=None))
-        text = base.mark_text(align='left', dx=5, font="Times New Roman", fontSize=14).encode(x='機率(%)', text='機率(%)')
+        text = base.mark_text(align='left', dx=5, font="Times New Roman", fontSize=16).encode(x='機率(%)', text='機率(%)')
         
         st.altair_chart((bar + text).properties(height=130), use_container_width=True)
 
