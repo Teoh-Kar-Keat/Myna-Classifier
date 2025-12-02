@@ -337,7 +337,7 @@ def main():
         st.altair_chart((bar + text).properties(height=130), use_container_width=True)
 
     # --- 詳細資訊區 ---
-    st.markdown("<h3 style='margin-top:30px;'>📖 物種詳細檔案</h3>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top:30px;'>📖 物種詳細檔案</h2>", unsafe_allow_html=True)
     
     if info:
         tab1, tab2, tab3 = st.tabs(["🔍 外觀與特徵", "🌿 生態與習性", "🛡️ 保育與分佈"])
