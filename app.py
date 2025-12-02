@@ -59,6 +59,11 @@ st.markdown("""
         font-weight: bold !important;
         color: #556B2F !important; /* 橄欖綠 */
     }
+    .stTabs [data-baseweb="tab"] button {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    }
 
     /* 3. 內文大字體優化 (.big-font 類別) */
     .big-font {
