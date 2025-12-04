@@ -12,5 +12,8 @@ Agent 開發過程：
 https://github.com/Teoh-Kar-Keat/Myna-Classifier/blob/main/Myna%20bird%20Streamlit%20app.pdf
 
 
+Streamlit APP: https://myna-classifier-8qknjz9jymwhzd7qozshwu.streamlit.app/
+
+
 https://github.com/user-attachments/assets/9607bc61-b640-42f7-b7a6-38a08de7ead3
 
